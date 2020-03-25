@@ -1,19 +1,8 @@
 using Plots
-using Statistics
 using Dates
-using Distributions
 
-# f(x) = L / (1 + exp(-k(x-x0)))
-# L: max val
-# k: growth rate
-# x0: midpoint
-
-
-f(x,k,L,x0) = L / (1 + exp(-k*(x-x0)))
-
-function loss(x,k,L,x0,y)
-    return sum((f.(x,k,L,x0) .- y).^2)
-end
+include("logistic_fit.jl")
+include("logistic_derivative_fit.jl")
 
 function total_infected_plot(start_date, x,y,L,k,x0,L_l,k_l,x0_l,L_u,k_u,x0_u,prob)
     x_max = 2 * max(x0, x0_l, x0_u)
@@ -51,15 +40,15 @@ function total_infected_plot(start_date, x,y,L,k,x0,L_l,k_l,x0_l,L_u,k_u,x0_u,pr
     return p
 end
 
-function new_infected_plot(start_date,x,y,L,k,x0,L_l,k_l,x0_l,L_u,k_u,x0_u,prob)
-    x_max = 2 * max(x0, x0_l, x0_u)
+function new_infected_plot(start_date,x,y,L,k,x0)
+    x_max = 2 * x0
     y_new = diff(vcat([0],y))
 
     start = Dates.format(start_date, "YY-mm-d")
     current = Dates.format(start_date + Day(length(y)), "YY-mm-d")
 
     p1 = scatter(x, y_new, label="New Infected Persons", legend=:topleft,
-            xlabel="Days since $start", ylabel="Total Infected",
+            xlabel="Days since $start", ylabel="New Infected Per Day",
             title="Austria-Covid-19 Prediction (as of $current)", size=(1000, 700))
     range = 0:0.1:Int(ceil(x_max))
     plot!(range, ∇f_x.(range,k,L,x0))
@@ -68,17 +57,17 @@ end
 function daily_prediction(y, start_date=DateTime(2020,2,26), prob=0.95)
     x = Array{Int}(0:length(y)-1)
     L,k,x0 = fit_logistic(x, y)
-    fit_d(x,y,L,k,x0)
+    dL,dk, dx0 = fit_d(x,y,L,k,x0, 1000)
 
     # L_l, k_l, x0_l, L_u, k_u, x0_u = confidence_intervals(L, k, x0, x, y, 1-prob)
     #
     # p1 = total_infected_plot(start_date,x,y,L,k,x0,L_l,k_l,x0_l,L_u,k_u,x0_u,prob)
     #
-    # p2 = new_infected_plot(start_date,x,y,L,k,x0,L_l,k_l,x0_l,L_u,k_u,x0_u,prob)
-    # # current = Dates.format(start_date + Day(length(y)), "YY_mm_d")
-    # # savefig("Prediction_$(current).png")
-    #
-    # return p2
+    # p2 = new_infected_plot(start_date,x,y,dL,dk,dx0)
+    # current = Dates.format(start_date + Day(length(y)), "YY_mm_d")
+    # savefig("Predictions\Prediction_$(current).png")
+
+    return p2
 end
 
 # data_24_3 = [2, 5, 10, 10, 13, 18, 26, 38, 53, 74, 91, 122, 147, 213, 316, 441, 628, 809, 1016, 1306, 1646, 2057, 2503, 3010, 3405, 3973, 4632]

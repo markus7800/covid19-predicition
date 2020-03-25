@@ -1,6 +1,18 @@
 using Statistics
 using Distributions
 
+
+# f(x) = L / (1 + exp(-k(x-x0)))
+# L: max val
+# k: growth rate
+# x0: midpoint
+f(x,k,L,x0) = L / (1 + exp(-k*(x-x0)))
+
+function loss(x,k,L,x0,y)
+    return sum((f.(x,k,L,x0) .- y).^2)
+end
+
+
 function loss_L(L, α, β, x, y)
     y_L = @. log(y / (L-y))
     y_hat = @. α + β * x
