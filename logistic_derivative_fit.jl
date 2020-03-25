@@ -38,7 +38,7 @@ function fit_logistic_derivative(x,y,init_L,init_k,init_x0, L_prec=10, frac=5)
     # linesearch
 
     function search_min(L0,L1,k0,k1,x00,x01,n)
-        println("Search in ($L0, $L1)x($k0, $k1)x($x00, $x01)")
+        # println("Search in ($L0, $L1)x($k0, $k1)x($x00, $x01)")
         ΔL = (L1 - L0) / n
         Δk = (k1 - k0) / n
         Δx0 = (x01 - x00) / n

@@ -1,10 +1,26 @@
 using Plots
 using Dates
+using Measures
 
 include("logistic_fit.jl")
 include("logistic_derivative_fit.jl")
 
-function total_infected_plot(start_date, x,y,L,k,x0,L_l,k_l,x0_l,L_u,k_u,x0_u,prob)
+function annotate_fit!(start_date,n,L,x0,x_max)
+    current = Dates.format(start_date + Day(n), "YY-mm-d")
+    vline!([n-1], ls=:dot, lc=:black)
+
+    infl = Dates.format(start_date + Day(ceil(x0)), "d.mm.YY")
+    vline!([x0], label="Predicted Inflection Point")
+    s = Dates.format(start_date + Day(ceil(2*x0)), "d.mm.YY")
+    vline!([ceil(2*x0)], label="Predicted End of Crisis")
+    annotate!(x_max+2, L, text("Max. Infected Prediction: $(Int(ceil(L)))", 10, halign=:left))
+    annotate!(x0+2, 100, text("Predicted Inflection Point: $infl", 10, halign=:left))
+    annotate!(x_max+2, 100, text("Predicted End of Crisis: $s", 10, halign=:left))
+end
+
+function total_infected_plot(start_date,x,y,L,k,x0,prob)
+    L_l, k_l, x0_l, L_u, k_u, x0_u = confidence_intervals(L, k, x0, x, y, 1-prob)
+
     x_max = 2 * max(x0, x0_l, x0_u)
 
     start = Dates.format(start_date, "YY-mm-d")
@@ -12,7 +28,7 @@ function total_infected_plot(start_date, x,y,L,k,x0,L_l,k_l,x0_l,L_u,k_u,x0_u,pr
 
     p1 = scatter(x, y, label="Infected Persons", legend=:topleft,
             xlabel="Days since $start", ylabel="Total Infected",
-            title="Austria-Covid-19 Prediction (as of $current)", size=(1000, 700))
+            title="Austria-Covid-19 Total Prediction (as of $current)", size=(1000, 700))
 
     best(t) = f(t, k, L, x0)
     lower(t) = f(t, k_l, L_l, x0_l)
@@ -24,20 +40,19 @@ function total_infected_plot(start_date, x,y,L,k,x0,L_l,k_l,x0_l,L_u,k_u,x0_u,pr
         fillalpha=.3, label="Logistic Fit with $(prob * 100)% bounds",
         xlims=(0,x_max+20))
 
-    # hline!([L], label="Maximum infizierte Personen Prognose")
-    infl = Dates.format(start_date + Day(ceil(x0)), "d.mm.YY")
-    vline!([x0], label="Predicted Inflection Point")
-    s = Dates.format(start_date + Day(ceil(2*x0)), "d.mm.YY")
-    p = vline!([ceil(2*x0)], label="Predicted End of Crisis")
+    annotate_fit!(start_date,length(y),L,x0,x_max)
 
-    annotate!(x_max+12, L, text("Max. Infected Prediction: $(Int(ceil(L)))", 10))
-    annotate!(x_max+12, L_l, text("Max. Infected Best Case: $(Int(ceil(L_l)))", 10))
-    annotate!(x_max+12, L_u, text("Max. Infected Worst Case: $(Int(ceil(L_u)))", 10))
+    annotate!(x_max+2, L_l, text("Max. Infected Best Case: $(Int(ceil(L_l)))", 10, halign=:left))
+    annotate!(x_max+2, L_u, text("Max. Infected Worst Case: $(Int(ceil(L_u)))", 10, halign=:left))
 
-    annotate!(x0+12, 100, text("Predicted Inflection Point: $infl", 10))
-    annotate!(2*x0+12, 100, text("Predicted End of Crisis: $s", 10))
+    p2 = scatter(x, log.(y), label="Infected Persons", legend=:topleft,
+            xlabel="Days since $start", ylabel="Log(Total Infected)",
+            title="Austria-Covid-19 Growth Rate (as of $current)", size=(1000, 700))
 
-    return p
+    plot!(t -> k*(t-x0) + log(L/2), label="Inflection line", xlims=(0,x_max))
+    annotate_fit!(start_date,length(y),L,x0,x_max)
+
+    return p1, p2
 end
 
 function new_infected_plot(start_date,x,y,L,k,x0)
@@ -49,29 +64,39 @@ function new_infected_plot(start_date,x,y,L,k,x0)
 
     p1 = scatter(x, y_new, label="New Infected Persons", legend=:topleft,
             xlabel="Days since $start", ylabel="New Infected Per Day",
-            title="Austria-Covid-19 Prediction (as of $current)", size=(1000, 700))
+            title="Austria-Covid-19 New Prediction (as of $current)", size=(1000, 700))
     range = 0:0.1:Int(ceil(x_max))
-    plot!(range, ∇f_x.(range,k,L,x0))
+    plot!(range, ∇f_x.(range,k,L,x0), label="Logistic Derivative Fit")
+
+    p2 = scatter(x, y, label="Infected Persons", legend=:topleft,
+            xlabel="Days since $start", ylabel="Total Infected",
+            title="Austria-Covid-19 Total Prediction (as of $current)", size=(1000, 700))
+    plot!(t->f(t,k,L,x0), 0, x_max, label="Logistic Derivative Fit",  xlims=(0,x_max+20))
+
+    annotate_fit!(start_date,length(y),L,x0,x_max)
+
+    return p1, p2
 end
 
 function daily_prediction(y, start_date=DateTime(2020,2,26), prob=0.95)
     x = Array{Int}(0:length(y)-1)
     L,k,x0 = fit_logistic(x, y)
-    dL,dk, dx0 = fit_d(x,y,L,k,x0, 1000)
+    dL,dk, dx0 = fit_logistic_derivative(x,y,L,k,x0)
 
-    # L_l, k_l, x0_l, L_u, k_u, x0_u = confidence_intervals(L, k, x0, x, y, 1-prob)
-    #
-    # p1 = total_infected_plot(start_date,x,y,L,k,x0,L_l,k_l,x0_l,L_u,k_u,x0_u,prob)
-    #
-    # p2 = new_infected_plot(start_date,x,y,dL,dk,dx0)
-    # current = Dates.format(start_date + Day(length(y)), "YY_mm_d")
-    # savefig("Predictions\Prediction_$(current).png")
+    p11, p12 = total_infected_plot(start_date,x,y,L,k,x0,prob)
 
-    return p2
+    p21, p22 = new_infected_plot(start_date,x,y,dL,dk,dx0)
+
+    p = plot(p11,p12,p21,p22, layout=(2,2), size=(3000,1800), margin=20mm)
+
+    current = Dates.format(start_date + Day(length(y)), "YY_mm_d")
+    savefig("Predictions/Prediction_$(current).png")
+
+    return p
 end
 
 # data_24_3 = [2, 5, 10, 10, 13, 18, 26, 38, 53, 74, 91, 122, 147, 213, 316, 441, 628, 809, 1016, 1306, 1646, 2057, 2503, 3010, 3405, 3973, 4632]
 # daily_prediction(data_24_3)
 
-data_25_3 = [2, 5, 10, 10, 13, 18, 26, 38, 53, 74, 91, 122, 147, 213, 316, 441, 629, 810, 1017, 1307, 1648, 2060, 2510, 3019, 3419, 3991, 4678, 5246]
+data_25_3 = [2, 5, 11, 11, 14, 19, 27, 40, 56, 77, 94, 125, 150, 216, 319, 444, 632, 814, 1021, 1306, 1646, 2063, 2514, 3025, 3427, 4010, 4725, 5341]
 daily_prediction(data_25_3)
