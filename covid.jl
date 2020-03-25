@@ -7,15 +7,15 @@ include("logistic_derivative_fit.jl")
 
 function annotate_fit!(start_date,n,L,x0,x_max)
     current = Dates.format(start_date + Day(n), "YY-mm-d")
-    vline!([n-1], ls=:dot, lc=:black)
+    vline!([n-1], ls=:dot, lc=:black, label="Today")
 
     infl = Dates.format(start_date + Day(ceil(x0)), "d.mm.YY")
-    vline!([x0], label="Predicted Inflection Point")
+    vline!([x0], label="Predicted Inflection Point", lc=:blue)
     s = Dates.format(start_date + Day(ceil(2*x0)), "d.mm.YY")
-    vline!([ceil(2*x0)], label="Predicted End of Crisis")
+    vline!([ceil(2*x0)], label="Predicted End of Crisis", lc=:green)
     annotate!(x_max+2, L, text("Max. Infected Prediction: $(Int(ceil(L)))", 10, halign=:left))
     annotate!(x0+2, 100, text("Predicted Inflection Point: $infl", 10, halign=:left))
-    annotate!(x_max+2, 100, text("Predicted End of Crisis: $s", 10, halign=:left))
+    annotate!(2*x0+2, 100, text("Predicted End of Crisis: $s", 10, halign=:left))
 end
 
 function total_infected_plot(start_date,x,y,L,k,x0,prob)
@@ -25,31 +25,30 @@ function total_infected_plot(start_date,x,y,L,k,x0,prob)
 
     start = Dates.format(start_date, "YY-mm-d")
     current = Dates.format(start_date + Day(length(y)), "YY-mm-d")
-
-    p1 = scatter(x, y, label="Infected Persons", legend=:topleft,
-            xlabel="Days since $start", ylabel="Total Infected",
-            title="Austria-Covid-19 Total Prediction (as of $current)", size=(1000, 700))
-
     best(t) = f(t, k, L, x0)
     lower(t) = f(t, k_l, L_l, x0_l)
     upper(t) = f(t, k_u, L_u, x0_u)
 
     range = 0:0.1:Int(ceil(x_max))
-    plot!(range, best.(range),
+    p1 = plot(range, best.(range),
         ribbon=(best.(range) .- lower.(range) , upper.(range).- best.(range)),
         fillalpha=.3, label="Logistic Fit with $(prob * 100)% bounds",
         xlims=(0,x_max+20))
+
+    scatter!(x, y, label="Infected Persons", legend=:bottomright,
+            xlabel="Days since $start", ylabel="Total Infected",
+            title="Austria-Covid-19 Total Prediction (as of $current)", size=(1000, 700))
 
     annotate_fit!(start_date,length(y),L,x0,x_max)
 
     annotate!(x_max+2, L_l, text("Max. Infected Best Case: $(Int(ceil(L_l)))", 10, halign=:left))
     annotate!(x_max+2, L_u, text("Max. Infected Worst Case: $(Int(ceil(L_u)))", 10, halign=:left))
 
-    p2 = scatter(x, log.(y), label="Infected Persons", legend=:topleft,
+    p2 = plot(t -> k*(t-x0) + log(L/2), label="Inflection line", xlims=(0,x_max))
+    scatter!(x, log.(y), label="Infected Persons", legend=:topleft,
             xlabel="Days since $start", ylabel="Log(Total Infected)",
             title="Austria-Covid-19 Growth Rate (as of $current)", size=(1000, 700))
 
-    plot!(t -> k*(t-x0) + log(L/2), label="Inflection line", xlims=(0,x_max))
     annotate_fit!(start_date,length(y),L,x0,x_max)
 
     return p1, p2
@@ -62,16 +61,17 @@ function new_infected_plot(start_date,x,y,L,k,x0)
     start = Dates.format(start_date, "YY-mm-d")
     current = Dates.format(start_date + Day(length(y)), "YY-mm-d")
 
-    p1 = scatter(x, y_new, label="New Infected Persons", legend=:topleft,
+    range = 0:0.1:Int(ceil(x_max))
+    p1 = plot(range, ∇f_x.(range,k,L,x0), label="Logistic Derivative Fit")
+    scatter!(x, y_new, label="New Infected Persons", legend=:bottomright,
             xlabel="Days since $start", ylabel="New Infected Per Day",
             title="Austria-Covid-19 New Prediction (as of $current)", size=(1000, 700))
-    range = 0:0.1:Int(ceil(x_max))
-    plot!(range, ∇f_x.(range,k,L,x0), label="Logistic Derivative Fit")
+    annotate_fit!(start_date,length(y),L,x0,x_max)
 
-    p2 = scatter(x, y, label="Infected Persons", legend=:topleft,
+    p2 = plot(t->f(t,k,L,x0), 0, x_max, label="Logistic Derivative Fit",  xlims=(0,x_max+20))
+    scatter!(x, y, label="Infected Persons", legend=:topleft,
             xlabel="Days since $start", ylabel="Total Infected",
             title="Austria-Covid-19 Total Prediction (as of $current)", size=(1000, 700))
-    plot!(t->f(t,k,L,x0), 0, x_max, label="Logistic Derivative Fit",  xlims=(0,x_max+20))
 
     annotate_fit!(start_date,length(y),L,x0,x_max)
 
