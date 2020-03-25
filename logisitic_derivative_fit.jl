@@ -1,6 +1,7 @@
 
 using Statistics
 using Distributions
+using NLsolve
 
 ∇f_x(x,k,L,x0) = (L*k*exp(-k*(x-x0))) / ((1 + exp(-k*(x-x0)))^2)
 # ∇f_L(x,k,L,x0) =  1 / (1 + exp(-k*(x-x0)))
@@ -20,8 +21,6 @@ end
 ∇dloss_L(x,y,k,L,x0) = sum(2*(∇f_x.(x,k,L,x0) .- y) .* ∇f_xL.(x,k,L,x0))
 ∇dloss_k(x,y,k,L,x0) = sum(2*(∇f_x.(x,k,L,x0) .- y) .* ∇f_xk.(x,k,L,x0))
 ∇dloss_x0(x,y,k,L,x0) = sum(2*(∇f_x.(x,k,L,x0) .- y) .* ∇f_xx0.(x,k,L,x0))
-
-using NLsolve
 
 function fit_d(x,y,init_L,init_k,init_x0)
     function f!(F, t)

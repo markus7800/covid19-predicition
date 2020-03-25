@@ -65,7 +65,7 @@ function ∇∇loss_L(L, x, y)
     return ∇∇loss_L(L, α, β, x, y)
 end
 
-
+# fits a linear model for a given L
 function line_fit(L, x, y)
     @assert all(L .> y)
 
@@ -86,7 +86,14 @@ function fit_logistic(x, y)
 
     # newton
     last = 0
+    n = 0
+    η = 1
     while true
+        n += 1
+        if n % 100 == 0
+            η *= 0.5
+        end
+
         α, β = line_fit(L, x, y)
         ∇l = ∇loss_L(L, α, β, x, y)
         ∇∇l = ∇∇loss_L(L, α, β, x, y)
@@ -97,7 +104,7 @@ function fit_logistic(x, y)
             return L, k, x0
         end
         last = ∇l
-        L -= ∇l / ∇∇l
+        L -= η * ∇l / ∇∇l
     end
 end
 
