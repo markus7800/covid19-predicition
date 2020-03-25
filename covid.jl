@@ -87,9 +87,11 @@ function daily_prediction(y, start_date=DateTime(2020,2,26), prob=0.95)
 
     p11, p12 = total_infected_plot(start_date,x,y,L,k,x0,prob)
 
-    p21, p22 = new_infected_plot(start_date,x,y,dL,dk,dx0)
+    # p21, p22 = new_infected_plot(start_date,x,y,dL,dk,dx0)
 
-    p = plot(p11,p12,p21,p22, layout=(2,2), size=(3000,1800), margin=20mm)
+    # p = plot(p11,p12,p21,p22, layout=(2,2), size=(3000,1800), margin=20mm)
+
+    p = plot(p11,p12, layout=(1,2), size=(3000,900), margin=20mm)
 
     current = Dates.format(start_date + Day(length(y)), "YY_mm_d")
     savefig("Predictions/Prediction_$(current).png")
@@ -102,3 +104,20 @@ end
 
 data_25_3 = [2, 5, 11, 11, 14, 19, 27, 40, 56, 77, 94, 125, 150, 216, 319, 444, 632, 814, 1021, 1306, 1646, 2063, 2514, 3025, 3427, 4010, 4725, 5341]
 daily_prediction(data_25_3)
+
+y = data_25_3
+x = Array{Int}(0:length(y)-1)
+L,k,x0 = fit_logistic(x, y)
+
+f(length(y)-1 + 1, k, L, x0)
+
+
+# 25.03. 15:00
+Infected = [2,2,3,6,10,14,18,21,27,39,53,77,100,138,178,242,356,497,648,853,1007,1320,1633,1998,2373,2798,3219,3894,4892,5549]
+Recovered = [0,0,0,0, 0, 0, 0, 0, 2, 2, 2, 2,  2,  2,  4,  4,  4,  6,  6,  6,   6,   9,   9,   9,   9,   9,   9,   9,   9,   9]
+Dead = [0,0,0,0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  1,  1,  1,  1,   3,   3,   4,   6,   6,   7,  16,  21,  25,  30]
+
+y1 = Infected
+y2 = Recovered .+ Dead
+
+fit_SEIR(y1,y2)
