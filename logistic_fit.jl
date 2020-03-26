@@ -63,22 +63,22 @@ function ∇∇loss_L(L, α, β, x, y)
 end
 
 function loss_L(L, x, y)
-    α, β = line_fit(L, x, y)
+    α, β = fit_line(L, x, y)
     return loss_L(L, α, β, x, y)
 end
 
 function ∇loss_L(L, x, y)
-    α, β = line_fit(L, x, y)
+    α, β = fit_line(L, x, y)
     return ∇∇loss_L(L, α, β, x, y)
 end
 
 function ∇∇loss_L(L, x, y)
-    α, β = line_fit(L, x, y)
+    α, β = fit_line(L, x, y)
     return ∇∇loss_L(L, α, β, x, y)
 end
 
 # fits a linear model for a given L
-function line_fit(L, x, y)
+function fit_line(L, x, y)
     @assert all(L .> y)
 
     y_L = @. log(y / (L-y))
@@ -87,36 +87,44 @@ function line_fit(L, x, y)
     y_bar = mean(y_L)
     xx = (x .- x_bar)
     yy = (y_L .- y_bar)
+
     β = (xx'yy) / (xx'xx)
     α = y_bar - β * x_bar
 
     return α, β
 end
 
-function fit_logistic(x, y)
-    L = maximum(y) + mean(y)
+function fit_logistic(x, y; L=Nothing)
+    if L == Nothing
+        L = maximum(y) + mean(y)
 
-    # newton
-    last = 0
-    n = 0
-    η = 1
-    while true
-        n += 1
-        if n % 100 == 0
-            η *= 0.5
+        # newton
+        last = 0
+        n = 0
+        η = 1
+        while true
+            n += 1
+            if n % 100 == 0
+                η *= 0.5
+            end
+
+            α, β = fit_line(L, x, y)
+            ∇l = ∇loss_L(L, α, β, x, y)
+            ∇∇l = ∇∇loss_L(L, α, β, x, y)
+
+            if abs((∇l - last) / last) < 1e-6 || ∇l == last
+                k = β
+                x0 = -α/k
+                return L, k, x0
+            end
+            last = ∇l
+            L -= η * ∇l / ∇∇l
         end
-
-        α, β = line_fit(L, x, y)
-        ∇l = ∇loss_L(L, α, β, x, y)
-        ∇∇l = ∇∇loss_L(L, α, β, x, y)
-
-        if abs((∇l - last) / last) < 1e-6 || ∇l == last
-            k = β
-            x0 = -α/k
-            return L, k, x0
-        end
-        last = ∇l
-        L -= η * ∇l / ∇∇l
+    else
+        α, β = fit_line(L, x, y)
+        k = β
+        x0 = -α/k
+        return L, k, x0
     end
 end
 

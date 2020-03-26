@@ -1,29 +1,62 @@
 
-function estimate_SIR(y1,y2)
+function exact_SIR(t, b, c, s0, i0)
+    # https://arxiv.org/pdf/1812.09759.pdf
+    κ = i0 / s0
+    c = c * 1e-9
+    γ = b / (b-c)
 
-    N = 8.822 * 1e6
-
-    I = y1
-    R = y2
-
-    dI = diff(vcat([0], y1))
-    dR = diff(vcat([0], y2))
-
-    γ = mean(dR ./ I)
-
-    S = @. N - I - R
-    dS = diff(vcat([N], S))
-
-    β = -mean(@. (dS * N) / (S * I))
-
-    return β, γ
+    return i0*(1+κ)^γ * exp((b-c)*t) / ((1+κ*exp((b-c)*t))^γ)
 end
 
-β, γ = estimate_SIR(y1,y2)
-a, b = SEIR(35, 0.4, γ, 0.5, 2)
-plot(a)
-scatter!(y1)
-plot!(b)
+exact_SIR_loss(x,y,b,c,s0,i0) = sum((exact_SIR.(x,b,c,s0,i0) .- y).^2)
+
+function fit_exact_SIR(x,y,frac=2,N=10)
+    b0 = 0
+    b1 = 10
+    c0 = 0
+    c1 = 1
+
+    i0 = y[1]
+    s0 = 8.822 * 1e6 - i0
+
+    function search_min(b0,b1,c0,c1,n)
+        println("Search in ($b0, $b1)x($c0, $c1)")
+        Δb = (b1 - b0) / n
+        Δc = (c1 - c0) / n
+
+        arg_min = (0, 0)
+        min_val = Inf
+        for b in b0:Δb:b1, c in c0:Δc:c1
+            v = exact_SIR_loss(x, y, b, c, s0, i0)
+            if  v < min_val
+                min_val = v
+                arg_min = (b, c)
+            end
+        end
+        return arg_min, min_val
+    end
+
+    (b,c) = (5,0.5)
+    n = 0
+    while n <= N
+        n += 1
+
+        (b,c), min_val = search_min(b0,b1,c0,c1,1000)
+
+        b0 = max(0, b - (b1-b0)/frac)
+        b1 = min(1, b + (b1-b0)/frac)
+
+        c0 = max(0, c - (c1-c0)/frac)
+        c1 = min(10, c + (c1-c0)/frac)
+
+        last = min_val
+
+        println("$b, $c: $min_val")
+    end
+
+    return b, c, i0, s0
+end
+
 function SEIR(T, β, γ, σ, I0=1)
     N = 8.822 * 1e6
     S = zeros(T)
