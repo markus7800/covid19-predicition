@@ -130,7 +130,6 @@ end
 
 function get_L(α, β, x, y)
     x_bar = mean(x)
-
     function f(L)
         y_L = @. log(y / (L-y))
         return mean(y_L) - β * x_bar - α
@@ -147,6 +146,7 @@ function get_L(α, β, x, y)
     n = 0
     η = 1
     while true
+
         n += 1
         if n % 100 == 0
             η *= 0.5
@@ -160,7 +160,7 @@ function get_L(α, β, x, y)
         end
 
         last = fx
-        L -= η * fx / dfx
+        L = max(maximum(y)+1, L - η * fx / dfx)
     end
 end
 

@@ -26,7 +26,7 @@ function total_affected_plot(start_date,x,y,L,k,x0,prob)
     x_max = 2 * max(x0, x0_l, x0_u)
 
     start = Dates.format(start_date, "YY-mm-d")
-    current = Dates.format(start_date + Day(length(y)), "YY-mm-d")
+    current = Dates.format(start_date + Day(length(y)-1), "YY-mm-d")
     best(t) = f(t, k, L, x0)
     lower(t) = f(t, k_l, L_l, x0_l)
     upper(t) = f(t, k_u, L_u, x0_u)
@@ -43,8 +43,8 @@ function total_affected_plot(start_date,x,y,L,k,x0,prob)
 
     annotate_fit!(start_date,length(y),L,x0,x_max)
 
-    annotate!(x_max+2, L_l, text("Max. Infected Best Case: $(Int(ceil(L_l)))", 10, halign=:left))
-    annotate!(x_max+2, L_u, text("Max. Infected Worst Case: $(Int(ceil(L_u)))", 10, halign=:left))
+    annotate!(x_max+2, L_l, text("Max. Affected Best Case: $(Int(ceil(L_l)))", 10, halign=:left))
+    annotate!(x_max+2, L_u, text("Max. Affected Worst Case: $(Int(ceil(L_u)))", 10, halign=:left))
 
     p2 = plot(t -> k*(t-x0) + log(L/2), label="Inflection line", xlims=(0,x_max), lc=2)
     scatter!(x, log.(y), label="Affected Persons", legend=:bottomright,
@@ -80,7 +80,7 @@ function new_infected_plot(start_date,x,y,L,k,x0)
     return p1, p2
 end
 
-function daily_prediction(Infected, Recovered, Dead, start_date=DateTime(2020,2,26), prob=0.95)
+function daily_prediction(Infected, Recovered, Dead, start_date=DateTime(2020,2,25), prob=0.95)
     y = Infected .+ Recovered .+ Dead
     x = Array{Int}(0:length(y)-1)
     L,k,x0 = fit_logistic(x, y)
@@ -89,7 +89,7 @@ function daily_prediction(Infected, Recovered, Dead, start_date=DateTime(2020,2,
 
     p = plot(p11,p12, layout=(2,1), size=(1800,1800), margin=20mm)
 
-    current = Dates.format(start_date + Day(length(y)), "YY_mm_d")
+    current = Dates.format(start_date + Day(length(y)-1), "YY_mm_d")
     savefig("Predictions/Prediction_$(current).png")
 
     return p, p11, t -> f(t, k,L,x0)
@@ -104,8 +104,61 @@ p, p1, base = daily_prediction(Infected, Recovered, Dead)
 display(p1)
 
 # 26.03 15:00
-Infected =  [2,2,3,6,10,14,18,21,27,39,53,77,100,138,178,242,356,497,648,853,1007,1320,1633,1998,2373,2798,3219,3894,4892,5549,6340]
-Recovered = [0,0,0,0, 0, 0, 0, 0, 2, 2, 2, 2,  2,  2,  4,  4,  4,  6,  6,  6,   6,   9,   9,   9,   9,   9,   9,   9,   9,   9,   9]
-Dead =      [0,0,0,0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  1,  1,  1,  1,   3,   3,   4,   6,   6,   7,  16,  21,  25,  30,  49]
+#Dates =    [25.2.26.2,27.2,28.2,29.2,01.3,02.3,03.3,04.3,05.3,06.3,07.3,08.3,09.3,10.3,11.3,12.3,13.3,14.3,15.3,16.3,17.3,18.3,19.3,20.3,21.3,22.3,23.3,24.3,25.3.26.3,27.3,28.3,29.3]
+Infected =  [   2,   2,   3,   6,  10,  14,  18,  21,  27,  39,  53,  77, 100, 138, 178, 242, 356, 497, 648, 853,1007,1320,1633,1998,2373,2798,3219,3894,4892,5549,6340,7374,7953,8209]
+Recovered = [   0,   0,   0,   0,   0,   0,   0,   0,   2,   2,   2,   2,   2,   2,   4,   4,   4,   6,   6,   6,   6,   9,   9,   9,   9,   9,   9,   9,   9,   9,   9,   9,   9, 479]
+Dead =      [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   3,   3,   4,   6,   6,   7,  16,  21,  25,  30,  49,  58,  68,  86]
 p, p1, base = daily_prediction(Infected, Recovered, Dead)
 display(p1)
+
+scatter(Infected)
+scatter(Recovered .+ Dead)
+
+I = Infected
+dR = diff(vcat([0], Recovered .+ Dead))
+gam = dR ./ I
+
+using Statistics
+using Plots
+
+scatter(dR, I)
+plot(gam)
+
+mean(gam)
+var(gam)
+
+println(gam)
+
+y = Infected
+x = Array(0:length(y)-1)
+r = fit_exact_SIR_1(x,y)
+i0 = y[1]
+(s0, b, c) = r.minimizer
+
+r = fit_exact_SIR_2(x,y)
+i0 = y[1]
+(s0, b, c) = r.minimizer
+
+r = fit_exact_SIR_3(x,y)
+i0 = y[1]
+(s0, b, c) = r.minimizer
+
+R0 = 1.05
+r = fit_exact_SIR_4(x,y,R0)
+i0 = y[1]
+(s0, γ) = r.minimizer
+
+b = γ * R0 / (R0-1)
+c = γ / (R0-1)
+plot(t->exact_SIR(t,b,c,s0,i0),1,100,yaxis=:log)
+R0 = 2
+b = γ * R0 / (R0-1)
+c = γ / (R0-1)
+plot!(t->exact_SIR(t,b,c,s0,i0),1,200,yaxis=:log)
+plot(t->exact_SIR(t,b,c,s0,i0),1,100,yaxis=:log)
+
+scatter!(x,y)
+
+f(x) = (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
+x0 = [0.0, 0.0]
+optimize(f, x0)
