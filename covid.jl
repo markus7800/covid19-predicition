@@ -143,21 +143,26 @@ r = fit_exact_SIR_3(x,y)
 i0 = y[1]
 (s0, b, c) = r.minimizer
 
-R0 = 1.05
+R0 = 2
 r = fit_exact_SIR_4(x,y,R0)
 i0 = y[1]
-(s0, γ) = r.minimizer
+(s0, t0, γ) = r.minimizer
 
 b = γ * R0 / (R0-1)
 c = γ / (R0-1)
-plot(t->exact_SIR(t,b,c,s0,i0),1,100,yaxis=:log)
-R0 = 2
-b = γ * R0 / (R0-1)
-c = γ / (R0-1)
-plot!(t->exact_SIR(t,b,c,s0,i0),1,200,yaxis=:log)
-plot(t->exact_SIR(t,b,c,s0,i0),1,100,yaxis=:log)
-
+plot(t->exact_SIR(t,t0,b,c,s0,i0),1,100)
 scatter!(x,y)
+
+r = fit_exact_SIR_5(x,y)
+i0 = y[1]
+(t0, R0, γ) = r.minimizer
+
+b = γ * R0 / (R0-1)
+c = γ / (R0-1)
+plot(t->exact_SIR(t,t0,b,c,1e6,i0),1,100)
+scatter!(x,y)
+
+
 
 f(x) = (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
 x0 = [0.0, 0.0]
