@@ -51,7 +51,7 @@ function fit_exact_IR_1(x,I,R)
     lower = Float64[maximum(I .+ R), -10,    0,  1]
     upper = Float64[9*1e6,       10,    1,  100]
 
-    optimize(F, lower, upper, [1e6, 0, 0.1, 2], SAMIN())
+    optimize(F, lower, upper, [1e6, 0, 0.1, 2], SAMIN(),Optim.Options(iterations=10^6))
 end
 
 function fit_exact_SIR_3(x,y)
