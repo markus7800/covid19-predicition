@@ -81,7 +81,7 @@ function new_infected_plot(start_date,x,y,L,k,x0)
     return p1, p2
 end
 
-function SIR_prediction(start_date,I,R, μ, months=6)
+function SIR_prediction(start_date,I,R,D, μ, months=6, save=false)
     x = Array(0:length(I)-1)
     r = fit_exact_IR_1(x,I,R)
     i0 = I[1]
@@ -93,6 +93,7 @@ function SIR_prediction(start_date,I,R, μ, months=6)
     pred_I(t) = exact_I(t, t0, b, c, s0, i0)
     pred_R(t) = exact_R(t, t0, b, c, s0, i0)
     pred_D(t) = μ * exact_R(t, t0, b, c, s0, i0)
+    pred_G(t) = (1-μ) * exact_R(t, t0, b, c, s0, i0)
 
     # x_max = length(x)
     # while pred_I(x_max) > 1000
@@ -101,12 +102,13 @@ function SIR_prediction(start_date,I,R, μ, months=6)
     x_max = length(x) + 30 * months
     current = Dates.format(start_date + Day(length(I)-1), "d-mm-YY")
 
-    p1 = plot(pred_I, 0, x_max, label="Predicted Infected")
+    p1 = plot(pred_I, 0, x_max, label="Predicted Infected",lc=1)
     title!("SIR prediction as of $current")
-    plot!(pred_R, label="Predicted Removed")
-    plot!(pred_D, label="Predicted Dead")
-    scatter!(x, I, label="Infected")
-    scatter!(x, R, label="Removed")
+    plot!(pred_D, label="Predicted Dead",lc=2)
+    plot!(pred_R, label="Predicted Recovered",lc=3)
+    scatter!(x, I, label="Infected",mc=1)
+    scatter!(x, D, label="Dead",mc=2)
+    scatter!(x, R.-D, label="Recovered",mc=3)
 
     is = []
     for i in 0:x_max
@@ -120,19 +122,21 @@ function SIR_prediction(start_date,I,R, μ, months=6)
     end
     vline!(is, ls=:dot, lc=:black, label="")
 
-    p2 = scatter(x, I, label="Infected", mc=4, legend=:topleft)
+    p2 = scatter(x, I, label="Infected", mc=1, legend=:topleft)
     title!("Goodness of fit for Infected")
     plot!(pred_I, label="Predicted Infected",lc=1)
 
-    p3 = scatter(x, R, label="Removed",mc=5, legend=:topleft)
+    p3 = scatter(x, R, label="Removed=Dead+Recovered",mc=4, legend=:topleft)
     title!("Goodness of fit for Removed")
-    plot!(pred_R, label="Predicted Removed",lc=2)
+    plot!(pred_R, label="Predicted Removed",lc=4)
 
     l = @layout [a ; b c]
     p = plot(p1,p2,p3, layout=l, size=(1000,1000))
 
-    current = Dates.format(start_date + Day(length(I)-1), "YY_mm_d")
-    savefig("Predictions/SIR_Prediction_$(current).png")
+    if save
+        current = Dates.format(start_date + Day(length(I)-1), "YY_mm_d")
+        savefig("Predictions/SIR_Prediction_$(current).png")
+    end
 
     return p
 end
@@ -168,11 +172,15 @@ Dead =      [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
 p, p1, base = daily_prediction(Infected, Recovered, Dead)
 display(p1)
 
+scatter(Recovered)
+
 function smooth_recovered(Recovered, Dead)
     weights = Dead ./ sum(Dead)
 
     return sum(Recovered) .* weights
 end
+
+scatter(smooth_recovered(Recovered, Dead))
 
 function estimate_μ(Recovered,Dead)
     return sum(Dead) / (sum(Dead) + sum(Recovered))
@@ -180,9 +188,10 @@ end
 
 I = Infected
 R = smooth_recovered(Recovered, Dead) .+ Dead
+D = Dead
 μ = estimate_μ(Recovered, Dead)
 
-SIR_prediction(Date(2020,2,25),I,R,μ)
+SIR_prediction(Date(2020,2,25),I,R,D,μ)
 
 
 x = Array(0:length(I)-1)
