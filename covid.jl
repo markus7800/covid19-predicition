@@ -120,12 +120,13 @@ function SIR_prediction(start_date,I,R,D,μ; months=6, save=false)
     vline!(is, ls=:dot, lc=:black, label="")
 
     r = peak_I(t0, b, c, s0, i0)
-    arg_max_I = r.minimizer
-    max_I = -r.minimum
-    date_max_I = Dates.format(start_date + Day(arg_max_I), "d-mm-YY")
+    arg_max_I = r.minimizer[1]
+    max_I = Int(ceil(-r.minimum))
+    days = floor(arg_max_I)
+    date_max_I = Dates.format(start_date + Day(days), "d-mm-YY")
 
     vline!([arg_max_I], ls=:dot, lc=:red, label="Maximum Infected")
-    annotate!(arg_max_I+5, max_I, text("$max_I\n$date_max_I", halign=:left))
+    annotate!(arg_max_I+5, max_I*0.66, text("Max Inf.: $max_I\n$date_max_I", 10, halign=:left))
 
 
     p2 = scatter(x, I, label="Infected", mc=1, legend=:topleft)
@@ -192,9 +193,9 @@ Dead =      [   0,   0,   0,   0,   0]
 
 # March
 # Dates =       [01.3,02.3,03.3,04.3,05.3,06.3,07.3,08.3,09.3,10.3,11.3,12.3,13.3,14.3,15.3,16.3,17.3,18.3,19.3,20.3,21.3,22.3,23.3,24.3,25.3.26.3,27.3,28.3,29.3,30.3]
-push!(Infected, [  14,  18,  21,  27,  39,  53,  77, 100, 138, 178, 242, 356, 497, 648, 853,1007,1320,1633,1998,2373,2793,3212,3875,4833,5490,6237,7158,7552,7971,8633]...)
-push!(Recovered,[   0,   0,   0,   2,   2,   2,   2,   2,   2,   4,   4,   4,   6,   6,   6,   6,   9,   9,   9,   9,  14,  16,  28,  68,  68, 112, 225, 410, 479, 636]...)
-push!(Dead,     [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   3,   3,   4,   6,   6,   7,  16,  21,  25,  30,  49,  58,  68,  86, 108]...)
+push!(Infected, [  14,  18,  21,  27,  39,  53,  77, 100, 138, 178, 242, 356, 497, 648, 853,1007,1320,1633,1998,2373,2793,3212,3875,4833,5490,6237,7158,7552,7971,8633,8751]...)
+push!(Recovered,[   0,   0,   0,   2,   2,   2,   2,   2,   2,   4,   4,   4,   6,   6,   6,   6,   9,   9,   9,   9,  14,  16,  28,  68,  68, 112, 225, 410, 479, 636,1095]...)
+push!(Dead,     [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   3,   3,   4,   6,   6,   7,  16,  21,  25,  30,  49,  58,  68,  86, 108,128]...)
 
 
 I = Infected
