@@ -95,6 +95,7 @@ function SIR_prediction(start_date,I,R,D,μ; months=6, save=false)
     pred_D(t) = μ * exact_R(t, t0, b, c, s0, i0)
     pred_G(t) = (1-μ) * exact_R(t, t0, b, c, s0, i0)
 
+
     x_max = length(x) + 30 * months
     current = Dates.format(start_date + Day(length(I)-1), "d-mm-YY")
 
@@ -117,6 +118,15 @@ function SIR_prediction(start_date,I,R,D,μ; months=6, save=false)
         end
     end
     vline!(is, ls=:dot, lc=:black, label="")
+
+    r = peak_I(t0, b, c, s0, i0)
+    arg_max_I = r.minimizer
+    max_I = -r.minimum
+    date_max_I = Dates.format(start_date + Day(arg_max_I), "d-mm-YY")
+
+    vline!([arg_max_I], ls=:dot, lc=:red, label="Maximum Infected")
+    annotate!(arg_max_I+5, max_I, text("$max_I\n$date_max_I", halign=:left))
+
 
     p2 = scatter(x, I, label="Infected", mc=1, legend=:topleft)
     title!("Goodness of fit for Infected")

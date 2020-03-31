@@ -25,7 +25,14 @@ function exact_R(t, t0, b, c, s0, i0)
     return N - (s0 + i0)^(b/(b-c)) / (s0 + i0*exp((b-c)*(t-t0)))^(c/(b-c))
 end
 
+function peak_I(t0, b, c, s0, i0, upper=100)
+    F((t,)) = -exact_I(t, t0, b, c, s0, i0)
 
+    lower = [t0]
+    upper = [upper]
+
+    optimize(F, lower, upper, [Float64(t0)], SAMIN(),Optim.Options(iterations=10^6))
+end
 
 using Plots
 
