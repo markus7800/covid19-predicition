@@ -118,7 +118,7 @@ function fit_logistic(x, y; L=Nothing)
                 return L, k, x0
             end
             last = ∇l
-            L -= η * ∇l / ∇∇l
+            L = max(L - η * ∇l / ∇∇l, maximum(y)+1)
         end
     else
         α, β = fit_line(L, x, y)
