@@ -208,7 +208,7 @@ push!(Dead_base,     [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   
 
 l = length(Infected_base)
 
-p_base, pred_I_base, pred_R_base = SIR_prediction(Date(2020,2,25),Infected_base,Recovered_base,Dead_base,μ,save=false)
+p_base, pred_I_base, pred_R_base = SIR_prediction(Date(2020,2,25),Infected_base,Recovered_base,Dead_base,save=false)
 display(p_base)
 
 p1, = daily_prediction(Infected_base, Recovered_base, Dead_base)
@@ -229,9 +229,9 @@ push!(Dead,     [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   
 
 # April
 # Dates =       [01.4,02.4]
-push!(Infected, [8900,9060]...)
-push!(Recovered,[1436,1749]...)
-push!(Dead,     [ 146, 158]...)
+push!(Infected, [8900,9060,9193]...)
+push!(Recovered,[1436,1749,2022]...)
+push!(Dead,     [ 146, 158, 168]...)
 
 scatter!(l+1:length(Infected), Infected[l+1:length(Infected)], label="new Infected", mc=:red)
 scatter!(l+1:length(Recovered), Recovered[l+1:length(Recovered)], label="new Recovered", mc=:red)
@@ -239,7 +239,7 @@ p = scatter!(l+1:length(Dead), Dead[l+1:length(Dead)], label="new Dead", mc=:red
 
 display(p)
 
-p_now, pred_I, pred_R = SIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,μ,save=true)
+p_now, pred_I, pred_R = SIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true)
 display(p_now)
 
 p_tot, = daily_prediction(Infected, Recovered, Dead, save=true)
