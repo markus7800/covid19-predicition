@@ -88,17 +88,20 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
     μ = estimate_μ(Recovered, Dead)
 
     x = Array(0:length(I)-1)
-    r = fit_exact_IR_1(x,I,R)
+    r = fit_exact_IR_with_delay(x,I,R)
     i0 = I[1]
-    (s0, t0, γ, R0) = r.minimizer
+    (s0, t0, t1, γ, R0) = r.minimizer
 
     b = γ * R0 / (R0 - 1)
     c = γ / (R0 - 1)
 
+    println("s0: $s0, t0: $t0, t1, $t1, γ: $γ, R0: $R0")
+    println("b: $b, c: $c")
+
     pred_I(t) = exact_I(t, t0, b, c, s0, i0)
-    pred_R(t) = exact_R(t, t0, b, c, s0, i0)
-    pred_D(t) = μ * exact_R(t, t0, b, c, s0, i0)
-    pred_G(t) = (1-μ) * exact_R(t, t0, b, c, s0, i0)
+    pred_R(t) = exact_R(t, t0+t1, b, c, s0, i0)
+    pred_D(t) = μ * exact_R(t, t0+t1, b, c, s0, i0)
+    pred_G(t) = (1-μ) * exact_R(t, t0+t1, b, c, s0, i0)
 
 
     x_max = length(x) + 30 * months
@@ -127,6 +130,14 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
     r = peak_I(t0, b, c, s0, i0)
     arg_max_I = r.minimizer[1]
     max_I = Int(ceil(-r.minimum))
+
+    arg_max_I_obs = argmax(Infected)
+    max_I_obs = Infected[arg_max_I_obs]
+    if max_I <= max_I_obs
+        arg_max_I = arg_max_I_obs - 1
+        max_I = max_I_obs
+    end
+
     days = round(arg_max_I)
     date_max_I = Dates.format(start_date + Day(days), "d-mm-YY")
 
@@ -149,6 +160,14 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
         current = Dates.format(start_date + Day(length(I)-1), "YY_mm_d")
         savefig("Predictions/SIR_Prediction_$(current).png")
     end
+
+    txt = """
+    s0: $s0, i0: $i0
+    R0: $R0, γ:  $γ,
+    b = $b, c = $c
+    t0: $t0, t1: $t1
+    """
+    println(txt)
 
     return p, pred_I, pred_R
 end
