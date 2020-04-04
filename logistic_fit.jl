@@ -96,7 +96,7 @@ end
 
 function fit_logistic(x, y; L=Nothing)
     if L == Nothing
-        L = maximum(y) + mean(y)
+        L = maximum(y) + 1 #mean(y)
 
         # newton
         last = 0
@@ -107,6 +107,8 @@ function fit_logistic(x, y; L=Nothing)
             if n % 100 == 0
                 η *= 0.5
             end
+
+            # println("$L vs $(maximum(y))")
 
             α, β = fit_line(L, x, y)
             ∇l = ∇loss_L(L, α, β, x, y)
