@@ -15,6 +15,11 @@ push!(Recovered_base,[   0,   0,   0,   2,   2,   2,   2,   2,   2,   4,   4,   
 push!(Dead_base,     [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   3,   3,   4,   6,   6,   7,  16,  21,  25,  30,  49,  58,  68,  86, 108, 128]...)
 
 
+# April
+# Dates =       [01.4,02.4,03.4,04.4]
+push!(Infected_base, [8900,9060,9193,8990]...)
+push!(Recovered_base,[1436,1749,2022,2507]...)
+push!(Dead_base,     [ 146, 158, 168, 168]...)
 
 l = length(Infected_base)
 
@@ -52,12 +57,5 @@ display(p)
 p_now, pred_I, pred_R = SIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true)
 display(p_now)
 
-p_tot, = daily_prediction(Infected, Recovered, Dead, save=true)
+p_tot, = Logisitic_prediction(Infected, Recovered, Dead, save=true)
 display(p_tot)
-
-scatter(Infected .+ Recovered .+ Dead, legend=false)
-
-y = Infected .+ Recovered .+ Dead
-x = collect(0:length(y)-1)
-
-plot(t -> ∇loss_L(t, x, y), 12000, 15000)

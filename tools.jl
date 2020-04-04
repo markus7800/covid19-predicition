@@ -95,9 +95,6 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
     b = γ * R0 / (R0 - 1)
     c = γ / (R0 - 1)
 
-    println("s0: $s0, t0: $t0, t1, $t1, γ: $γ, R0: $R0")
-    println("b: $b, c: $c")
-
     pred_I(t) = exact_I(t, t0, b, c, s0, i0)
     pred_R(t) = exact_R(t, t0+t1, b, c, s0, i0)
     pred_D(t) = μ * exact_R(t, t0+t1, b, c, s0, i0)
@@ -105,15 +102,21 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
 
 
     x_max = length(x) + 30 * months
+    y_max = pred_I(x_max) + pred_R(x_max)
     current = Dates.format(start_date + Day(length(I)-1), "d-mm-YY")
 
     p1 = plot(pred_I, 0, x_max, label="Predicted Infected",lc=1)
     title!("SIR prediction as of $current")
-    plot!(pred_D, label="Predicted Dead",lc=2)
-    plot!(pred_R, label="Predicted Recovered",lc=3)
+    plot!(pred_D, 0, x_max, label="Predicted Dead",lc=2)
+    plot!(pred_R, 0, x_max, label="Predicted Recovered",lc=3)
+    plot!(t -> pred_I(t)+pred_R(t), 0, x_max, label="Predicted Total cases", lc=4)
     scatter!(x, I, label="Infected",mc=1)
     scatter!(x, D, label="Dead",mc=2)
     scatter!(x, R.-D, label="Recovered",mc=3)
+    scatter!(x, I .+ R, label="Total cases", mc=4)
+    xticks!(0:25:x_max)
+    y_range = 0:1000:y_max
+    yticks!((y_range, string.(Int.(y_range))))
 
     is = []
     for i in 0:x_max
@@ -142,8 +145,8 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
     date_max_I = Dates.format(start_date + Day(days), "d-mm-YY")
 
     vline!([arg_max_I], ls=:dot, lc=:red, label="Maximum Infected")
-    annotate!(arg_max_I+5, max_I*0.66, text("Max Inf.: $max_I\n$date_max_I", 10, halign=:left))
-
+    annotate!(arg_max_I+5, y_max, text("Max Inf.: $max_I\n$date_max_I", 10, halign=:left))
+    # max_I*0.66
 
     p2 = scatter(x, I, label="Infected", mc=1, legend=:topleft)
     title!("Goodness of fit for Infected")
@@ -172,7 +175,7 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
     return p, pred_I, pred_R
 end
 
-function daily_prediction(Infected, Recovered, Dead, start_date=DateTime(2020,2,25), prob=0.95; save=false)
+function Logisitic_prediction(Infected, Recovered, Dead, start_date=DateTime(2020,2,25), prob=0.95; save=false)
     y = Infected .+ Recovered .+ Dead
     x = Array{Int}(0:length(y)-1)
     L,k,x0 = fit_logistic(x, y)
