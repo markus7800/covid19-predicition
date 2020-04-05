@@ -17,13 +17,13 @@ push!(Dead_base,     [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   
 
 # April
 # Dates =       [01.4,02.4,03.4,04.4]
-push!(Infected_base, [8900,9060,9193,8990]...)
-push!(Recovered_base,[1436,1749,2022,2507]...)
-push!(Dead_base,     [ 146, 158, 168, 168]...)
+# push!(Infected_base, [8900,9060,9193,8990]...)
+# push!(Recovered_base,[1436,1749,2022,2507]...)
+# push!(Dead_base,     [ 146, 158, 168, 168]...)
 
 l = length(Infected_base)
 
-p_base, pred_I_base, pred_R_base = SIR_prediction(Date(2020,2,25),Infected_base,Recovered_base,Dead_base,save=false)
+p_base, pred_I_base, pred_R_base = SINIR_prediction(Date(2020,2,25),Infected_base[1:33],Recovered_base[1:33],Dead_base[1:33],save=false)
 display(p_base)
 
 # p1, = daily_prediction(Infected_base, Recovered_base, Dead_base)
@@ -50,11 +50,15 @@ push!(Dead,     [ 146, 158, 168, 168]...)
 
 scatter!(l+1:length(Infected), Infected[l+1:length(Infected)], label="new Infected", mc=:red)
 scatter!(l+1:length(Recovered), Recovered[l+1:length(Recovered)], label="new Recovered", mc=:red)
-p = scatter!(l+1:length(Dead), Dead[l+1:length(Dead)], label="new Dead", mc=:red)
+scatter!(l+1:length(Dead), Dead[l+1:length(Dead)], label="new Dead", mc=:red)
+p = scatter!(l+1:length(Dead), Infected[l+1:length(Infected)] .+ Recovered[l+1:length(Recovered)] .+ Dead[l+1:length(Dead)], label="new Dead", mc=:red)
 
 display(p)
 
 p_now, pred_I, pred_R = SIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true)
+display(p_now)
+
+p_now, pred_I, pred_R = SINIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true)
 display(p_now)
 
 p_tot, = Logisitic_prediction(Infected, Recovered, Dead, save=true)

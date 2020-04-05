@@ -88,17 +88,17 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
     μ = estimate_μ(Recovered, Dead)
 
     x = Array(0:length(I)-1)
-    r = fit_exact_IR_with_delay(x,I,R)
+    r = fit_exact_SIR(x,I,R)
     i0 = I[1]
-    (s0, t0, t1, γ, R0) = r.minimizer
+    (s0, t0, γ, R0) = r.minimizer
 
     b = γ * R0 / (R0 - 1)
     c = γ / (R0 - 1)
 
     pred_I(t) = exact_I(t, t0, b, c, s0, i0)
-    pred_R(t) = exact_R(t, t0+t1, b, c, s0, i0)
-    pred_D(t) = μ * exact_R(t, t0+t1, b, c, s0, i0)
-    pred_G(t) = (1-μ) * exact_R(t, t0+t1, b, c, s0, i0)
+    pred_R(t) = exact_R(t, t0, b, c, s0, i0)
+    pred_D(t) = μ * exact_R(t, t0, b, c, s0, i0)
+    pred_G(t) = (1-μ) * exact_R(t, t0, b, c, s0, i0)
 
 
     x_max = length(x) + 30 * months
@@ -136,7 +136,7 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
 
     arg_max_I_obs = argmax(Infected)
     max_I_obs = Infected[arg_max_I_obs]
-    if max_I <= max_I_obs
+    if max_I <= max_I_obs || arg_max_I < arg_max_I_obs
         arg_max_I = arg_max_I_obs - 1
         max_I = max_I_obs
     end
@@ -162,6 +162,102 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
     if save
         current = Dates.format(start_date + Day(length(I)-1), "YY_mm_d")
         savefig("Predictions/SIR_Prediction_$(current).png")
+    end
+
+    txt = """
+    s0: $s0, i0: $i0
+    R0: $R0, γ:  $γ,
+    b = $b, c = $c
+    t0: $t0
+    """
+    println(txt)
+
+    return p, pred_I, pred_R
+end
+
+function SINIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false)
+    I = Infected
+    R = Recovered .+ Dead
+    D = Dead
+    μ = estimate_μ(Recovered, Dead)
+
+    x = Array(0:length(I)-1)
+    r = fit_exact_SINIR(x,I,R)
+    i0 = I[1]
+    (s0, t0, t1, γ, R0) = r.minimizer
+
+    b = γ * R0 / (R0 - 1)
+    c = γ / (R0 - 1)
+
+    pred_I(t) = exact_I(t, t0, b, c, s0, i0)
+    pred_R(t) = exact_R(t, t0+t1, b, c, s0, i0)
+    pred_D(t) = μ * exact_R(t, t0, t1, b, c, s0, i0)
+    pred_G(t) = (1-μ) * exact_R(t, t0, t1, b, c, s0, i0)
+    pred_Q(t) = exact_Q(t, t0, t1, b, c, s0, i0)
+
+
+    x_max = length(x) + 30 * months
+    y_max = pred_I(x_max) + pred_R(x_max)
+    current = Dates.format(start_date + Day(length(I)-1), "d-mm-YY")
+
+    p1 = plot(pred_I, 0, x_max, label="Predicted Infected",lc=1)
+    title!("SINIR prediction as of $current")
+    plot!(pred_D, 0, x_max, label="Predicted Dead",lc=2)
+    plot!(pred_R, 0, x_max, label="Predicted Recovered",lc=3)
+    plot!(pred_Q, 0, x_max, label="Predicted Quarantine",lc=5)
+    plot!(t -> pred_I(t)+pred_R(t), 0, x_max, label="Predicted Total cases", lc=4)
+    scatter!(x, I, label="Infected",mc=1)
+    scatter!(x, D, label="Dead",mc=2)
+    scatter!(x, R.-D, label="Recovered",mc=3)
+    scatter!(x, I .+ R, label="Total cases", mc=4)
+    xticks!(0:25:x_max)
+    y_range = 0:1000:y_max
+    yticks!((y_range, string.(Int.(y_range))))
+
+    is = []
+    for i in 0:x_max
+        d = start_date + Day(i)
+        if day(d) == 1
+            push!(is, i-0.5)
+            m = Dates.format(d, "U")
+            t = text(m, font(5, rotation=90.0), halign=:left)
+            annotate!(i+5, 0, t)
+        end
+    end
+    vline!(is, ls=:dot, lc=:black, label="")
+
+    r = peak_I(t0, b, c, s0, i0)
+    arg_max_I = r.minimizer[1]
+    max_I = Int(ceil(-r.minimum))
+
+    arg_max_I_obs = argmax(Infected)
+    max_I_obs = Infected[arg_max_I_obs]
+    if max_I <= max_I_obs || arg_max_I < arg_max_I_obs
+        arg_max_I = arg_max_I_obs - 1
+        max_I = max_I_obs
+    end
+
+    days = round(arg_max_I)
+    date_max_I = Dates.format(start_date + Day(days), "d-mm-YY")
+
+    vline!([arg_max_I], ls=:dot, lc=:red, label="Maximum Infected")
+    annotate!(arg_max_I+5, y_max, text("Max Inf.: $max_I\n$date_max_I", 10, halign=:left))
+    # max_I*0.66
+
+    p2 = scatter(x, I, label="Infected", mc=1, legend=:topleft)
+    title!("Goodness of fit for Infected")
+    plot!(pred_I, label="Predicted Infected",lc=1)
+
+    p3 = scatter(x, R, label="Removed=Dead+Recovered",mc=4, legend=:topleft)
+    title!("Goodness of fit for Removed")
+    plot!(pred_R, label="Predicted Removed",lc=4)
+
+    l = @layout [a ; b c]
+    p = plot(p1,p2,p3, layout=l, size=(1000,1000))
+
+    if save
+        current = Dates.format(start_date + Day(length(I)-1), "YY_mm_d")
+        savefig("Predictions/SINIR_Prediction_$(current).png")
     end
 
     txt = """
