@@ -190,7 +190,7 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=fal
     c = γ / (R0 - 1)
 
     pred_I(t) = exact_I(t, t0, b, c, s0, i0)
-    pred_R(t) = exact_R(t, t0+t1, b, c, s0, i0)
+    pred_R(t) = exact_R(t, t0, t1, b, c, s0, i0)
     pred_D(t) = μ * exact_R(t, t0, t1, b, c, s0, i0)
     pred_G(t) = (1-μ) * exact_R(t, t0, t1, b, c, s0, i0)
     pred_Q(t) = exact_Q(t, t0, t1, b, c, s0, i0)
@@ -203,7 +203,7 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=fal
     p1 = plot(pred_I, 0, x_max, label="Predicted Infected",lc=1)
     title!("SINIR prediction as of $current")
     plot!(pred_D, 0, x_max, label="Predicted Dead",lc=2)
-    plot!(pred_R, 0, x_max, label="Predicted Recovered",lc=3)
+    plot!(pred_G, 0, x_max, label="Predicted Recovered",lc=3)
     plot!(pred_Q, 0, x_max, label="Predicted Quarantine",lc=5)
     plot!(t -> pred_I(t)+pred_R(t), 0, x_max, label="Predicted Total cases", lc=4)
     scatter!(x, I, label="Infected",mc=1)
