@@ -1,6 +1,7 @@
 using Plots
 using Dates
 using Measures
+using ProgressMeter
 
 include("logistic_fit.jl")
 include("logistic_derivative_fit.jl")
@@ -175,11 +176,26 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
     return p, pred_I, pred_R
 end
 
-function SINIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false)
-    I = Infected
-    R = Recovered .+ Dead
-    D = Dead
-    μ = estimate_μ(Recovered, Dead)
+function SINIR_prediction(start_date,Infected,Recovered,Dead;months=6,save=false,x_max=nothing,y_max=nothing,up_to=nothing,ann=true)
+    n = length(Infected)
+    @assert length(Recovered) == n && length(Dead) == n
+    if up_to == nothing
+        I = Infected
+        R = Recovered .+ Dead
+        D = Dead
+        μ = estimate_μ(Recovered, Dead)
+    else
+        I = Infected[1:up_to]
+        R = Recovered[1:up_to] .+ Dead[1:up_to]
+        D = Dead[1:up_to]
+        μ = estimate_μ(Recovered[1:up_to], Dead[1:up_to])
+
+        I_future = Infected[up_to+1:n]
+        R_future = Recovered[up_to+1:n] .+ Dead[up_to+1:n]
+        D_future = Dead[up_to+1:n]
+
+        x_future = Array(up_to:n-1)
+    end
 
     x = Array(0:length(I)-1)
     r = fit_exact_SINIR(x,I,R)
@@ -195,12 +211,18 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=fal
     pred_G(t) = (1-μ) * exact_R(t, t0, t1, b, c, s0, i0)
     pred_Q(t) = exact_Q(t, t0, t1, b, c, s0, i0)
 
-
-    x_max = length(x) + 30 * months
-    y_max = pred_I(x_max) + pred_R(x_max)
+    if x_max == nothing
+        x_max = length(x) + 30 * months
+    end
+    if y_max == nothing
+        y_max = pred_I(x_max) + pred_R(x_max)
+    end
     current = Dates.format(start_date + Day(length(I)-1), "d-mm-YY")
 
     p1 = plot(pred_I, 0, x_max, label="Predicted Infected",lc=1)
+    xlims!(0,x_max)
+    ylims!(0,y_max)
+
     title!("SINIR prediction as of $current")
     plot!(pred_D, 0, x_max, label="Predicted Dead",lc=2)
     plot!(pred_G, 0, x_max, label="Predicted Recovered",lc=3)
@@ -213,6 +235,13 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=fal
     xticks!(0:25:x_max)
     y_range = 0:1000:y_max
     yticks!((y_range, string.(Int.(y_range))))
+
+    if up_to != nothing
+        scatter!(x_future, I_future, label="", mc=:red)
+        scatter!(x_future, R_future.-D_future, label="", mc=:red)
+        scatter!(x_future, D_future, label="", mc=:red)
+        scatter!(x_future, I_future.+R_future, label="", mc=:red)
+    end
 
     is = []
     for i in 0:x_max
@@ -240,9 +269,10 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=fal
     days = round(arg_max_I)
     date_max_I = Dates.format(start_date + Day(days), "d-mm-YY")
 
-    vline!([arg_max_I], ls=:dot, lc=:red, label="Maximum Infected")
-    annotate!(arg_max_I+5, y_max, text("Max Inf.: $max_I\n$date_max_I", 10, halign=:left))
-    # max_I*0.66
+    if ann
+        vline!([arg_max_I], ls=:dot, lc=:red, label="Maximum Infected")
+        annotate!(arg_max_I+5, y_max, text("Max Inf.: $max_I\n$date_max_I", 10, halign=:left))
+    end
 
     p2 = scatter(x, I, label="Infected", mc=1, legend=:topleft)
     title!("Goodness of fit for Infected")
@@ -253,7 +283,7 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=fal
     plot!(pred_R, label="Predicted Removed",lc=4)
 
     l = @layout [a ; b c]
-    p = plot(p1,p2,p3, layout=l, size=(1000,1000))
+    p = plot(p1,p2,p3, layout=l, size=(1000,1000), left_margin=25pt)
 
     if save
         current = Dates.format(start_date + Day(length(I)-1), "YY_mm_d")
@@ -266,9 +296,23 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=fal
     b = $b, c = $c
     t0: $t0, t1: $t1
     """
+
     println(txt)
 
-    return p, pred_I, pred_R
+    p1 = plot(p1, size=(1000,500))
+
+    return p, pred_I, pred_R, p1
+end
+
+function SINIR_animation(start_date,Infected,Recovered,Dead, start=10; months=6,y_max=20000)
+    anim = Animation()
+    x_max = start + 30 * months
+    @showprogress for i in start:length(Infected)
+        _, _, _, p1 = SINIR_prediction(start_date,Infected,Recovered,Dead;x_max=x_max,y_max=y_max,up_to=i,ann=false)
+        frame(anim, p1)
+    end
+    current = Dates.format(start_date + Day(length(Infected)-1), "YY_mm_d")
+    gif(anim, "Animation/SINIR_$(current).gif", fps=2)
 end
 
 function Logisitic_prediction(Infected, Recovered, Dead, start_date=DateTime(2020,2,25), prob=0.95; save=false)
