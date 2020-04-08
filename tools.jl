@@ -232,7 +232,20 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead;months=6,save=false
     scatter!(x, D, label="Dead",mc=2)
     scatter!(x, R.-D, label="Recovered",mc=3)
     scatter!(x, I .+ R, label="Total cases", mc=4)
-    xticks!(0:25:x_max)
+
+    first_monday = -1
+    mondays_str = String[]
+    for i in 0:x_max
+        date = start_date + Day(i)
+        if dayofweek(date) == 1
+            if first_monday == -1
+                first_monday = i
+            end
+            push!(mondays_str, Dates.format(date, "d."))
+        end
+    end
+
+    xticks!((first_monday:7:x_max, mondays_str))
     y_range = 0:1000:y_max
     yticks!((y_range, string.(Int.(y_range))))
 
@@ -250,7 +263,7 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead;months=6,save=false
             push!(is, i-0.5)
             m = Dates.format(d, "U")
             t = text(m, font(5, rotation=90.0), halign=:left)
-            annotate!(i+5, 0, t)
+            annotate!(i+5, y_max - 1000, t)
         end
     end
     vline!(is, ls=:dot, lc=:black, label="")
