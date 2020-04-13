@@ -325,7 +325,7 @@ function SINIR_animation(start_date,Infected,Recovered,Dead, start=10; months=6,
         frame(anim, p1)
     end
     current = Dates.format(start_date + Day(length(Infected)-1), "YY_mm_d")
-    gif(anim, "Animation/SINIR_$(current).gif", fps=2)
+    gif(anim, "Animation/SINIR_$(current).gif", fps=1)
 end
 
 function Logisitic_prediction(Infected, Recovered, Dead, start_date=DateTime(2020,2,25), prob=0.95; save=false)

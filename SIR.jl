@@ -107,8 +107,11 @@ end
 
 exact_I_loss(x,I,t0,b,c,s0,i0) = 1/2 * sum((exact_I.(x,t0,b,c,s0,i0) .- I).^2)
 exact_R_loss(x,R,t0,b,c,s0,i0) = 1/2 * sum((exact_R.(x,t0,b,c,s0,i0) .- R).^2)
+exact_IR_loss(x,I,R,t0,t1,b,c,s0,i0) = 1/2 * sum(((exact_I.(x,t0,b,c,s0,i0).+exact_R.(x,t0+t1,b,c,s0,i0)) .- (I.+R)).^2)
+
 exact_SIR_loss(x,I,R,t0,b,c,s0,i0) = exact_I_loss(x,I,t0,b,c,s0,i0) + exact_R_loss(x,R,t0,b,c,s0,i0)
-exact_SINIR_loss(x,I,R,t0,t1,b,c,s0,i0) = exact_I_loss(x,I,t0,b,c,s0,i0) + exact_R_loss(x,R,t0+t1,b,c,s0,i0)
+
+exact_SINIR_loss(x,I,R,t0,t1,b,c,s0,i0) = exact_I_loss(x,I,t0,b,c,s0,i0) + exact_R_loss(x,R,t0+t1,b,c,s0,i0) + exact_IR_loss(x,I,R,t0,t1,b,c,s0,i0)
 
 γ(b,c) = b - c
 R0(b,c) = b / c
