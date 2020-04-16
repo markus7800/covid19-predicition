@@ -43,10 +43,10 @@ push!(Recovered,[   0,   0,   0,   2,   2,   2,   2,   2,   2,   4,   4,   4,   
 push!(Dead,     [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   3,   3,   4,   6,   6,   7,  16,  21,  25,  30,  49,  58,  68,  86, 108, 128]...)
 
 # April
-# Dates =       [01.4,02.4,03.4,04.4,05.4,06.4,07.4,08.4,09.4,10.4,11.4,12.4,13.4]
-push!(Infected, [8900,9060,9193,8990,8705,8523,8230,8067,7603,7070,6835,6557,6288]...)
-push!(Recovered,[1436,1749,2022,2507,2998,3463,4046,4512,5240,6064,6604,6987,7343]...)
-push!(Dead,     [ 146, 158, 168, 168, 204, 220, 243, 273, 295, 319, 337, 350, 368]...)
+# Dates =       [01.4,02.4,03.4,04.4,05.4,06.4,07.4,08.4,09.4,10.4,11.4,12.4,13.4,14.4,15.4,16.4]
+push!(Infected, [8900,9060,9193,8990,8705,8523,8230,8067,7603,7070,6835,6557,6288,6142,5830,5055]...)
+push!(Recovered,[1436,1749,2022,2507,2998,3463,4046,4512,5240,6064,6604,6987,7343,7633,8098,8986]...)
+push!(Dead,     [ 146, 158, 168, 168, 204, 220, 243, 273, 295, 319, 337, 350, 368, 384, 393, 419]...)
 
 scatter!(l+1:length(Infected), Infected[l+1:length(Infected)], label="new Infected", mc=:red)
 scatter!(l+1:length(Recovered), Recovered[l+1:length(Recovered)], label="new Recovered", mc=:red)
@@ -58,7 +58,7 @@ display(p)
 p_now, pred_I, pred_R = SIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true)
 display(p_now)
 
-p_now, pred_I, pred_R, p1 = SINIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true)
+p_now, pred_I, pred_R, p1 = SINIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true,months=3)
 display(p1)
 
 p_tot, = Logisitic_prediction(Infected, Recovered, Dead, save=true)
