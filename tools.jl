@@ -162,7 +162,7 @@ function SIR_prediction(start_date,Infected,Recovered,Dead; months=6, save=false
 
     if save
         current = Dates.format(start_date + Day(length(I)-1), "YY_mm_d")
-        savefig("Predictions/SIR_Prediction_$(current).png")
+        savefig("Predictions/SIR/SIR_Prediction_$(current).png")
     end
 
     txt = """
@@ -300,7 +300,7 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead;months=6,save=false
 
     if save
         current = Dates.format(start_date + Day(length(I)-1), "YY_mm_d")
-        savefig("Predictions/SINIR_Prediction_$(current).png")
+        savefig("Predictions/SINIR/SINIR_Prediction_$(current).png")
     end
 
     txt = """
@@ -339,7 +339,7 @@ function Logisitic_prediction(Infected, Recovered, Dead, start_date=DateTime(202
 
     if save
         current = Dates.format(start_date + Day(length(y)-1), "YY_mm_d")
-        savefig("Predictions/Prediction_$(current).png")
+        savefig("Predictions/Logistic/Prediction_$(current).png")
     end
 
     return p, p11, t -> f(t, k,L,x0)
