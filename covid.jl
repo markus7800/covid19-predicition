@@ -50,10 +50,10 @@ push!(Recovered,[1436,1749,2022,2507,2998,3463,4046,4512,5240,6064,6604,6987,734
 push!(Dead,     [ 146, 158, 168, 168, 204, 220, 243, 273, 295, 319, 337, 350, 368, 384, 393, 419, 431,  443,  452,  470,  491,  510,  522,  530,  536,  542,  549,  569,  580,  584]...)
 
 # May
-# Dates =       [ 01.5, 02.5, 03.5, 04.5, 05.5, 06.5]
-push!(Infected, [ 1789, 1732, 1701, 1635, 1511, 1386]...)
-push!(Recovered,[13092,13180,13228,13316,13462,13639]...)
-push!(Dead,     [  589,  596,  598,  600, 606,  608]...)
+# Dates =       [ 01.5, 02.5, 03.5, 04.5, 05.5, 06.5, 07.5, 08.5, 09.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.6, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 24.5, 25.5, 26.5, 27.5, 28.5]
+push!(Infected, [ 1789, 1732, 1701, 1635, 1511, 1386, 1358, 1264, 1213, 1177, 1164, 1123, 1045,  983,  994,  993,  975,  958,  951,  780,  751,  748,  748,  758,  680,  672,  641,  590]...)
+push!(Recovered,[13092,13180,13228,13316,13462,13639,13698,13836,13928,13991,14061,14148,14304,14405,14471,14524,14563,14614,14678,14882,14951,15005,15005,15005,15138,15182,15228,15286]...)
+push!(Dead,     [  589,  596,  598,  600, 606,  608,  609,  614,  615,  618,  620,   623,  624,  626,  628,  629,  629,  629,  632,  633,  633,  625,  625,  625,  641,  643,  645,  668]...)
 
 scatter!(l+1:length(Infected), Infected[l+1:length(Infected)], label="new Infected", mc=:red)
 scatter!(l+1:length(Recovered), Recovered[l+1:length(Recovered)], label="new Recovered", mc=:red)
@@ -65,7 +65,7 @@ display(p)
 p_now, pred_I, pred_R = SIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true)
 display(p_now)
 
-p_now, pred_I, pred_R, p1 = SINIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true,months=3)
+p_now, pred_I, pred_R, p1 = SINIR_prediction(Date(2020,2,25),Infected,Recovered,Dead,save=true,months=3,y_max=17000)
 display(p1)
 
 p_tot, = Logisitic_prediction(Infected, Recovered, Dead, save=true)

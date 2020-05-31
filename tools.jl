@@ -215,7 +215,7 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead;months=6,save=false
         x_max = length(x) + 30 * months
     end
     if y_max == nothing
-        y_max = pred_I(x_max) + pred_R(x_max)
+        y_max = max(pred_I(x_max) + pred_R(x_max), maximum(I .+ R))
     end
     current = Dates.format(start_date + Day(length(I)-1), "d-mm-YY")
 
@@ -228,10 +228,10 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead;months=6,save=false
     plot!(pred_G, 0, x_max, label="Predicted Recovered",lc=3)
     plot!(pred_Q, 0, x_max, label="Predicted Quarantine",lc=5)
     plot!(t -> pred_I(t)+pred_R(t), 0, x_max, label="Predicted Total cases", lc=4)
-    scatter!(x, I, label="Infected",mc=1)
     scatter!(x, D, label="Dead",mc=2)
     scatter!(x, R.-D, label="Recovered",mc=3)
     scatter!(x, I .+ R, label="Total cases", mc=4)
+    scatter!(x, I, label="Infected",mc=1)
 
     first_monday = -1
     mondays_str = String[]
