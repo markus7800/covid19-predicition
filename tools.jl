@@ -219,7 +219,7 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead;months=6,save=false
     end
     current = Dates.format(start_date + Day(length(I)-1), "d-mm-YY")
 
-    p1 = plot(pred_I, 0, x_max, label="Predicted Infected",lc=1)
+    p1 = plot(pred_I, 0, x_max, label="Predicted Infected",lc=1, legend=ann && :bottomright)
     xlims!(0,x_max)
     ylims!(0,y_max)
 
@@ -287,11 +287,11 @@ function SINIR_prediction(start_date,Infected,Recovered,Dead;months=6,save=false
         annotate!(arg_max_I+5, y_max, text("Max Inf.: $max_I\n$date_max_I", 10, halign=:left))
     end
 
-    p2 = scatter(x, I, label="Infected", mc=1, legend=:topleft)
+    p2 = scatter(x, I, label="Infected", mc=1, legend=:topright)
     title!("Goodness of fit for Infected")
     plot!(pred_I, label="Predicted Infected",lc=1)
 
-    p3 = scatter(x, R, label="Removed=Dead+Recovered",mc=4, legend=:topleft)
+    p3 = scatter(x, R, label="Removed=Dead+Recovered",mc=4, legend=:bottomright)
     title!("Goodness of fit for Removed")
     plot!(pred_R, label="Predicted Removed",lc=4)
 
